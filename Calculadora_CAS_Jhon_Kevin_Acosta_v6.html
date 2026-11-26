@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#111111">
+<title>Calculadora tipo CAS - Jhon Kevin Acosta</title>
+<style>
+:root{--bg:#101010;--panel:#1b1b1b;--panel2:#242424;--yellow:#facc15;--text:#f5f5f5;--muted:#aaa;--line:#383838}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:16px 14px 12px;background:#151515;border-bottom:1px solid #343434;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand h1{font-size:19px;margin:0;color:var(--yellow);letter-spacing:.5px}.brand small{color:#aaa;font-size:10px;display:block;margin-top:3px}.tag{border:1px solid var(--yellow);color:var(--yellow);border-radius:8px;padding:5px 9px;font-weight:800}
+main{max-width:1000px;margin:auto;padding:12px}.tabs{display:flex;gap:7px;overflow:auto;padding:4px 0 12px}.tab{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:#ddd;padding:9px 13px;border-radius:9px}.tab.active{background:var(--yellow);color:#111;border-color:var(--yellow);font-weight:800}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}.display{background:#090909;border:1px solid #3a3a3a;border-radius:12px;padding:12px;margin-bottom:10px}.display label{font-size:11px;color:var(--yellow)}#expr{width:100%;background:transparent;color:white;border:0;outline:0;font-size:22px;padding:10px 0;min-height:42px}#answer{color:var(--yellow);font-size:20px;min-height:27px;overflow-wrap:anywhere}.hint{font-size:11px;color:var(--muted);margin-top:5px}
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.key{background:#292929;color:#f5f5f5;border:1px solid #404040;border-radius:9px;padding:12px 3px;font-size:15px;min-height:43px}.key:active{background:#555}.key.op{color:var(--yellow)}.key.special{background:#39320e;border-color:#78630b;color:#ffe36b}.key.equals{background:var(--yellow);color:#111;font-weight:900}.key.wide{grid-column:span 2}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row input,.row select,.field{background:#101010;color:white;border:1px solid #444;border-radius:8px;padding:10px;min-width:0}.row input{flex:1}.btn{background:var(--yellow);color:#111;border:0;border-radius:9px;padding:10px 13px;font-weight:800}.btn.secondary{background:#333;color:white;border:1px solid #555}.section-title{color:var(--yellow);font-weight:800;margin:2px 0 10px}.result{white-space:pre-wrap;background:#101010;border:1px solid #393939;border-radius:9px;padding:11px;min-height:44px;overflow-wrap:anywhere}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.muted{color:var(--muted);font-size:12px}#plot{width:100%;height:370px;background:#fff;border-radius:10px;overflow:hidden}#plot3{width:100%;height:390px;background:#fff;border-radius:10px;overflow:hidden}.hidden{display:none}.foot{text-align:center;color:#777;font-size:11px;padding:15px}
+@media(max-width:480px){.keys{gap:5px}.key{padding:11px 1px;font-size:14px}.grid2{grid-template-columns:1fr}#plot,#plot3{height:330px}.brand h1{font-size:17px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div><h1>CALCULADORA TIPO CAS</h1><small>JHON KEVIN ACOSTA · CÁLCULO Y ÁLGEBRA</small></div><div class="tag">CAS</div></div></header>
+<main>
+<nav class="tabs">
+<button class="tab active" data-tab="calc">Calculadora</button><button class="tab" data-tab="tools">Cálculo</button>
+</nav>
+<section id="calc" class="page">
+<div class="panel">
+<div class="display"><label>EXPRESIÓN</label><input id="expr" autocomplete="off" spellcheck="false" placeholder="Ej. sin(x)^2 + cos(x)^2"><div id="answer">Resultado: —</div><div class="hint">Puedes escribir con el teclado del teléfono o usar los botones.</div></div>
+<div class="keys" id="keys"></div>
+<div class="row" style="margin-top:9px"><button class="btn secondary" id="clear">Borrar todo</button><button class="btn secondary" id="back">⌫ Borrar</button><button class="btn" id="eval">Calcular =</button></div>
+</div>
+<div class="panel">
+<div class="section-title">Gráfica en el mismo apartado</div>
+<div class="row"><input id="inlineFunc" value="x^2" placeholder="Función en x, por ejemplo sin(x)"><button class="btn" id="inlineDraw">Graficar 2D</button></div>
+<div class="row" style="margin-top:8px"><button class="btn secondary" id="zoomIn">＋ Zoom</button><button class="btn secondary" id="zoomOut">－ Zoom</button><button class="btn secondary" id="zoomReset">Restablecer</button><span class="muted">También puedes pellizcar para zoom y arrastrar para mover.</span></div>
+<canvas id="inlinePlot" width="900" height="440" style="display:block;width:100%;height:340px;background:#fff;border-radius:10px;margin-top:10px;touch-action:none"></canvas>
+<div class="muted" style="margin-top:6px">Ejes X e Y visibles · Usa dos dedos para acercar o alejar. Arrastra para desplazarte.</div>
+<div class="section-title" style="margin-top:16px">Gráfica 3D en este mismo apartado</div>
+<div class="row"><input id="inlineZfunc" value="sin(sqrt(x^2+y^2))" placeholder="z = f(x,y)"><button class="btn" id="inlineDraw3">Graficar 3D</button></div>
+<canvas id="inlinePlot3" width="900" height="460" style="display:block;width:100%;height:340px;background:#fff;border-radius:10px;margin-top:10px;touch-action:none"></canvas>
+</div>
+<div class="panel"><div class="section-title">Historial</div><div id="history" class="result muted">Tus operaciones aparecerán aquí.</div></div>
+</section>
+<section id="tools" class="page hidden">
+<div class="panel">
+<div class="section-title">Cálculo simbólico</div>
+<div class="row"><input id="func" value="x^3 + 2*x^2 - 5*x + 1" aria-label="Función" placeholder="Escribe f(x)"><input id="at" value="2" style="max-width:95px" aria-label="Valor de x"></div>
+<div class="row" style="margin-top:8px"><button class="btn" data-action="derive">Derivada</button><button class="btn" data-action="integrate">Integral definida</button><button class="btn secondary" data-action="limit">Límite</button><button class="btn secondary" data-action="value">Evaluar</button></div>
+<div class="row" style="margin-top:8px"><span class="muted">Integral de a a b:</span><input id="inta" value="0" style="max-width:75px"><input id="intb" value="2" style="max-width:75px"></div><div class="row" style="margin-top:8px"><span class="muted">Límite cuando x tiende a:</span><input id="limto" value="0" style="max-width:90px"><select id="limside"><option value="both">Por ambos lados</option><option value="left">Por la izquierda</option><option value="right">Por la derecha</option></select></div>
+<div id="calcresult" class="result" style="margin-top:10px">Aquí aparecerá el procedimiento simbólico disponible.</div>
+<p class="muted">Derivadas, integrales y límites se calculan numéricamente. El resultado es una aproximación; para una demostración exacta se requiere cálculo simbólico.</p>
+</div>
+<div class="panel">
+<div class="section-title">Dominio de función e imagen</div>
+<div class="row"><input id="domfunc" value="sqrt(x+2)" placeholder="Función, por ejemplo sqrt(x+2)"><input id="xmin" value="-10" style="max-width:75px" aria-label="Mínimo x"><input id="xmax" value="10" style="max-width:75px" aria-label="Máximo x"><button class="btn" id="domain">Analizar</button></div>
+<div id="domainresult" class="result" style="margin-top:10px">Escribe una función y pulsa Analizar. Se mostrarán resultados exactos cuando la calculadora reconozca el tipo de función; en los demás casos indicará que son aproximaciones.</div>
+</div>
+</section>
+<section id="graph" class="page hidden">
+<div class="panel"><div class="section-title">Gráfica de funciones 2D</div><div class="row"><input id="gfunc" value="sin(x)" placeholder="Ej. x^2 - 4"><input id="gxmin" value="-10" style="max-width:75px"><input id="gxmax" value="10" style="max-width:75px"><button class="btn" id="draw">Graficar</button></div><div class="muted" style="margin:8px 0">Variable independiente: x · Puedes usar varias funciones separadas por punto y coma.</div><canvas id="plot" width="900" height="420" style="width:100%;height:370px;background:white;border-radius:10px"></canvas></div>
+</section>
+<section id="surface" class="page hidden">
+<div class="panel"><div class="section-title">Gráfica 3D · z = f(x,y)</div><div class="row"><input id="zfunc" value="sin(sqrt(x^2+y^2))" placeholder="Ej. x^2-y^2"><button class="btn" id="draw3">Graficar 3D</button></div><div class="row" style="margin-top:8px"><span class="muted">Rango:</span><input id="range3" value="5" style="max-width:90px"></div><canvas id="plot3" width="900" height="460" style="width:100%;height:390px;background:white;border-radius:10px;margin-top:10px"></canvas><p class="muted">La superficie se calcula como z = f(x,y). Puedes girar y acercar la gráfica con los dedos.</p></div>
+</section>
+<div class="foot">Calculadora educativa de Jhon Kevin Acosta · Comprueba los resultados importantes.</div>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const keyRows=[
+[['7',''],['8',''],['9',''],['÷','op'],['⌫','op']],
+[['4',''],['5',''],['6',''],['×','op'],['−','op']],
+[['1',''],['2',''],['3',''],['+','op'],['=','equals']],
+[['0','wide'],['.',''],['(',''],[')',''],['^','op']],
+[['x','special'],['y','special'],['π','special'],['e','special'],['√','special']],
+[['sin(','special'],['cos(','special'],['tan(','special'],['log(','special'],['ln(','special']],
+[['asin(','special'],['acos(','special'],['atan(','special'],['abs(','special'],['!','special']],
+[['∫','special'],['d/dx','special'],['lim','special'],['≤','special'],['≥','special']],
+[['∞','special'],['≠','special'],['≈','special'],['%','special'],[',','']]
+];
+keyRows.flat().forEach(([v,c])=>{let b=document.createElement('button');b.className='key '+(c||'');b.textContent=v;b.onclick=()=>insertKey(v);$('keys').appendChild(b)});
+function insertKey(v){let el=$('expr'),a=el.selectionStart,b=el.selectionEnd,s=v;if(v==='⌫'){if(a===b&&a>0)a--;el.value=el.value.slice(0,a)+el.value.slice(b);el.setSelectionRange(a,a)}else{let map={'×':'*','÷':'/','−':'-','√':'sqrt(','π':'pi','∞':'Infinity','≤':'<=','≥':'>=','≠':'!=','≈':'~','∫':'integral(','d/dx':'derivative('};s=map[v]||v;el.value=el.value.slice(0,a)+s+el.value.slice(b);el.focus();el.setSelectionRange(a+s.length,a+s.length)}}
+function tokenize(input){
+ let s=input.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/π/g,'pi').replace(/√/g,'sqrt').replace(/\bln\b/g,'log').replace(/\s+/g,'');
+ let raw=[],i=0;
+ while(i<s.length){
+  let rest=s.slice(i),m;
+  if((m=rest.match(/^(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?/i))){raw.push({t:'num',v:Number(m[0])});i+=m[0].length;continue}
+  if((m=rest.match(/^[a-zA-Z_][a-zA-Z_0-9]*/))){raw.push({t:'id',v:m[0].toLowerCase()});i+=m[0].length;continue}
+  if(s.startsWith('<=',i)||s.startsWith('>=',i)||s.startsWith('!=',i)||s.startsWith('==',i)){raw.push({t:'op',v:s.slice(i,i+2)});i+=2;continue}
+  let c=s[i];if('+-*/^%!(),'.includes(c)){raw.push({t:'op',v:c});i++;continue}
+  throw Error('Símbolo no reconocido: '+c);
+ }
+ // Inserta multiplicación implícita: 2x, 3(x+1), (x)(x+1), 2pi.
+ let out=[];
+ for(let j=0;j<raw.length;j++){
+  let a=raw[j],b=raw[j+1];out.push(a);
+  const left=a.t==='num'||(a.t==='id'&&!['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','sqrt','abs','exp','log','ln','floor','ceil','round','sign','min','max'].includes(a.v))||a.v===')'||a.v==='!';
+  const right=(b&&(b.t==='num'||b.t==='id'||b.v==='('));
+  // Function identifier followed by '(' is a function call, not multiplication.
+  if(left&&right&&!(a.t==='id'&&b.v==='('&&['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','sqrt','abs','exp','log','ln','floor','ceil','round','sign','min','max'].includes(a.v)))out.push({t:'op',v:'*'});
+ }
+ return out;
+}
+const funcs={sin:Math.sin,cos:Math.cos,tan:Math.tan,asin:Math.asin,acos:Math.acos,atan:Math.atan,sinh:Math.sinh,cosh:Math.cosh,tanh:Math.tanh,sqrt:Math.sqrt,abs:Math.abs,exp:Math.exp,log:Math.log,ln:Math.log,floor:Math.floor,ceil:Math.ceil,round:Math.round,sign:Math.sign,min:Math.min,max:Math.max};
+function evaluate(expr,vars={}){
+ let ts=tokenize(String(expr)),p=0;
+ const peek=()=>ts[p],eat=v=>{if(peek()&&peek().v===v){p++;return true}return false};
+ function primary(){
+  let t=peek();if(!t)throw Error('Expresión incompleta');
+  if(eat('+'))return primary();if(eat('-'))return -primary();
+  if(eat('(')){let v=compare();if(!eat(')'))throw Error('Falta )');return v}
+  if(t.t==='num'){p++;return t.v}
+  if(t.t==='id'){
+   p++;let name=t.v;
+   if(funcs[name]&&eat('(')){let args=[compare()];while(eat(','))args.push(compare());if(!eat(')'))throw Error('Falta ) en función');return funcs[name](...args)}
+   if(name==='pi')return Math.PI;if(name==='e')return Math.E;if(name==='inf'||name==='infinity')return Infinity;
+   if(Object.prototype.hasOwnProperty.call(vars,name))return vars[name];
+   throw Error('Variable o función desconocida: '+name);
+  }
+  throw Error('Expresión no válida');
+ }
+ function postfix(){let v=primary();while(true){if(eat('!')){if(v<0||!Number.isInteger(v)||v>170)throw Error('El factorial requiere entero entre 0 y 170');let n=1;for(let k=2;k<=v;k++)n*=k;v=n}else if(eat('%'))v/=100;else break}return v}
+ function power(){let a=postfix();if(eat('^'))return Math.pow(a,power());return a}
+ function mul(){let a=power();while(true){if(eat('*'))a*=power();else if(eat('/'))a/=power();else break}return a}
+ function add(){let a=mul();while(true){if(eat('+'))a+=mul();else if(eat('-'))a-=mul();else break}return a}
+ function compare(){let a=add();while(peek()&&['<','>','<=','>=','!=','=='].includes(peek().v)){let op=ts[p++].v,b=add();a=op==='<'?+(a<b):op==='>'?+(a>b):op==='<='?+(a<=b):op==='>='?+(a>=b):op==='!='?+(a!==b):+(a===b)}return a}
+ let result=compare();if(p<ts.length)throw Error('Revisa la expresión cerca de '+ts[p].v);return result;
+}
+function fmt(x){if(typeof x!=='number'||Number.isNaN(x))return String(x);if(!Number.isFinite(x))return String(x);return Number(x.toPrecision(12)).toString()}
+function calculate(){try{let s=$('expr').value;let v=evaluate(s);$('answer').textContent='Resultado: '+fmt(v);let old=$('history').textContent;if(old==='Tus operaciones aparecerán aquí.')old='';$('history').textContent=(s+' = '+fmt(v)+'\n'+old).slice(0,1800)}catch(e){$('answer').textContent='Error: '+e.message}}
+$('clear').onclick=()=>{$('expr').value='';$('answer').textContent='Resultado: —'};$('back').onclick=()=>insertKey('⌫');$('eval').onclick=calculate;$('expr').addEventListener('keydown',e=>{if(e.key==='Enter')calculate()});
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));$(t.dataset.tab).classList.remove('hidden');if(t.dataset.tab==='graph')draw2();if(t.dataset.tab==='surface')draw3()});
+function simpson(f,a,b,n=1000){if(a===b)return 0;if(n%2)n++;let h=(b-a)/n,sum=f(a)+f(b);for(let i=1;i<n;i++)sum+=(i%2?4:2)*f(a+i*h);return sum*h/3}
+function derivative(f,x){let h=1e-5*Math.max(1,Math.abs(x));return (f(x+h)-f(x-h))/(2*h)}
+function sym(op){let f=$('func').value.trim(),x=Number($('at').value),fn=t=>evaluate(f,{x:t});try{let out='';if(op==='derive')out='f′('+x+') ≈ '+fmt(derivative(fn,x))+'\nDerivada numérica por diferencia central.';if(op==='integrate'){let a=Number($('inta').value),b=Number($('intb').value);out='∫ de '+a+' a '+b+' f(x) dx ≈ '+fmt(simpson(fn,a,b))+'\nIntegración numérica por método de Simpson.'}if(op==='value')out='f('+x+') = '+fmt(fn(x));if(op==='limit'){let c=Number($('limto').value),side=$('limside').value,eps=[1e-2,1e-3,1e-4,1e-5,1e-6];let vals=eps.map(h=>{try{return side==='left'?fn(c-h):side==='right'?fn(c+h):(fn(c-h)+fn(c+h))/2}catch(e){return NaN}});out='Límite aproximado cuando x → '+c+': '+fmt(vals[vals.length-1])+'\nAproximaciones: '+vals.map(fmt).join(', ')+'\nSi los lados no coinciden, el límite bilateral no existe.'}$('calcresult').textContent=out}catch(e){$('calcresult').textContent='No se pudo calcular: '+e.message}}
+document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>sym(b.dataset.action));
+function analyzeDomainImage(f,lo,hi){
+ const clean=f.replace(/\s+/g,'').toLowerCase();
+ const all='(-∞, +∞)';
+ // Comprueba si una expresión es exactamente afín: a*x+b.
+ function affine(expr){
+  try{
+   const c=evaluate(expr,{x:0}),p=evaluate(expr,{x:1}),m=evaluate(expr,{x:-1});
+   const a=(p-m)/2,b=c;
+   for(const t of [-5,-2,-.5,.5,2,5]){
+    const y=evaluate(expr,{x:t});
+    if(!Number.isFinite(y)||Math.abs(y-(a*t+b))>1e-8*Math.max(1,Math.abs(y)))return null;
+   }
+   return {a,b};
+  }catch(e){return null}
+ }
+ function shiftText(n){return n===0?'':(n>0?'+':'')+fmt(n)}
+ // Polinomios cuadráticos o lineales.
+ if(!/[\\/]|sqrt|log|ln|asin|acos|abs|exp|sin|cos|tan/.test(clean)){
+  const q=affine(clean);
+  if(q){
+   // La forma afín incluye también polinomios lineales y constantes.
+   return 'Función: f(x) = '+f+'\nDominio de la función: '+all+
+    '\nDominio de imagen (recorrido): '+(Math.abs(q.a)<1e-12?'['+fmt(q.b)+', '+fmt(q.b)+']':all)+
+    '\nResultado exacto: función afín.';
+  }
+  try{
+   const c=evaluate(f,{x:0}),p=evaluate(f,{x:1}),m=evaluate(f,{x:-1});
+   const a=(p+m-2*c)/2,b=(p-m)/2;
+   let valid=true;
+   for(let x of [-4,-3,-2,-.5,.5,2,3,4]){
+    const y=evaluate(f,{x});
+    if(!Number.isFinite(y)||Math.abs(y-(a*x*x+b*x+c))>1e-8*Math.max(1,Math.abs(y)))valid=false;
+   }
+   if(valid&&Math.abs(a)>1e-12){
+    const vertex=c-b*b/(4*a), image=a>0?'['+fmt(vertex)+', +∞)':'(-∞, '+fmt(vertex)+']';
+    return 'Función: f(x) = '+f+'\nDominio de la función: '+all+'\nDominio de imagen (recorrido): '+image+'\nResultado exacto: función cuadrática.';
+   }
+  }catch(e){}
+ }
+ // Raíz cuadrada de una expresión afín, con posible desplazamiento vertical.
+ let mt=clean.match(/^sqrt\((.+)\)([+-](?:\d+(?:\.\d*)?|\.\d+))?$/);
+ if(mt){
+  const q=affine(mt[1]),k=Number(mt[2]||0);
+  if(q){
+   let d;
+   if(Math.abs(q.a)<1e-12)d=q.b>=0?all:'∅';
+   else {const cut=-q.b/q.a;d=q.a>0?'['+fmt(cut)+', +∞)':'(-∞, '+fmt(cut)+']';}
+   const im=Math.abs(q.a)<1e-12?'['+fmt(Math.sqrt(Math.max(0,q.b))+k)+', '+fmt(Math.sqrt(Math.max(0,q.b))+k)+']':'['+fmt(k)+', +∞)';
+   return 'Función: f(x) = '+f+'\nDominio de la función: '+d+'\nDominio de imagen (recorrido): '+im+'\nResultado exacto: raíz cuadrada de una expresión afín.';
+  }
+ }
+ // Cociente constante / expresión afín, más un desplazamiento vertical.
+ mt=clean.match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\/\((.+)\)([+-](?:\d+(?:\.\d*)?|\.\d+))?$/);
+ if(mt){
+  const numerator=Number(mt[1]),q=affine(mt[2]),k=Number(mt[3]||0);
+  if(q&&Math.abs(q.a)>1e-12){
+   const excluded=-q.b/q.a;
+   if(Math.abs(numerator)>1e-12){
+    return 'Función: f(x) = '+f+'\nDominio de la función: ℝ − {'+fmt(excluded)+'}\nDominio de imagen (recorrido): ℝ − {'+fmt(k)+'}\nResultado exacto: función racional con asíntota vertical x = '+fmt(excluded)+' y horizontal y = '+fmt(k)+'.';
+   }
+   return 'Función: f(x) = '+f+'\nDominio de la función: ℝ − {'+fmt(excluded)+'}\nDominio de imagen (recorrido): [ '+fmt(k)+', '+fmt(k)+' ]\nResultado exacto: función constante donde está definida.';
+  }
+ }
+ // Logaritmo de una expresión afín, con posible desplazamiento vertical.
+ mt=clean.match(/^(?:log|ln)\((.+)\)([+-](?:\d+(?:\.\d*)?|\.\d+))?$/);
+ if(mt){
+  const q=affine(mt[1]),k=Number(mt[2]||0);
+  if(q){
+   let d;
+   if(Math.abs(q.a)<1e-12)d=q.b>0?all:'∅';
+   else {const cut=-q.b/q.a;d=q.a>0?'('+fmt(cut)+', +∞)':'(-∞, '+fmt(cut)+')';}
+   return 'Función: f(x) = '+f+'\nDominio de la función: '+d+'\nDominio de imagen (recorrido): ℝ\nResultado exacto: función logarítmica; el desplazamiento vertical no cambia su recorrido.';
+  }
+ }
+ // Exponencial de expresión afín, con posible desplazamiento vertical.
+ mt=clean.match(/^exp\((.+)\)([+-](?:\d+(?:\.\d*)?|\.\d+))?$/);
+ if(mt){
+  const q=affine(mt[1]),k=Number(mt[2]||0);
+  if(q){
+   const im=Math.abs(q.a)<1e-12?'['+fmt(Math.exp(q.b)+k)+', '+fmt(Math.exp(q.b)+k)+']':'('+fmt(k)+', +∞)';
+   return 'Función: f(x) = '+f+'\nDominio de la función: ℝ\nDominio de imagen (recorrido): '+im+'\nResultado exacto: función exponencial.';
+  }
+ }
+ // Funciones no reconocidas: estimación honesta en el intervalo indicado.
+ let valid=0,min=Infinity,max=-Infinity,runs=0,inside=false;
+ for(let i=0;i<=10000;i++){
+  let x=lo+(hi-lo)*i/10000;
+  try{let y=evaluate(f,{x});if(Number.isFinite(y)&&Math.abs(y)<1e8){valid++;min=Math.min(min,y);max=Math.max(max,y);if(!inside)runs++;inside=true}else inside=false}catch(e){inside=false}
+ }
+ return 'Función: f(x) = '+f+'\nDominio de la función: no se pudo determinar exactamente. En ['+lo+', '+hi+'] se detectaron '+valid+' puntos válidos en '+runs+' tramo(s).\nDominio de imagen (recorrido): estimación ['+(valid?fmt(min):'—')+', '+(valid?fmt(max):'—')+'] en el rango analizado.\nAviso: para esta forma de función el resultado sigue siendo una aproximación numérica, no una demostración matemática.';
+}
+$('domain').onclick=()=>{let f=$('domfunc').value.trim(),lo=Number($('xmin').value),hi=Number($('xmax').value);if(!f){$('domainresult').textContent='Escribe una función.';return}if(!Number.isFinite(lo)||!Number.isFinite(hi)||!(hi>lo)){$('domainresult').textContent='El máximo debe ser mayor que el mínimo.';return}$('domainresult').textContent=analyzeDomainImage(f,lo,hi)};
+function canvas(id){let c=$(id),ctx=c.getContext('2d');let w=c.width,h=c.height;ctx.clearRect(0,0,w,h);return {c,ctx,w,h}}
+let view2={xmin:-10,xmax:10,ymin:-10,ymax:10,drag:false,lastX:0,lastY:0,pointers:new Map(),pinch:0};
+function graph2(expr){
+ let c=$('inlinePlot'),ctx=c.getContext('2d'),w=c.width,h=c.height,v=view2,pad=58;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+ const X=x=>pad+(x-v.xmin)/(v.xmax-v.xmin)*(w-2*pad),Y=y=>h-pad-(y-v.ymin)/(v.ymax-v.ymin)*(h-2*pad);
+ // Escala automática: muestra enteros consecutivos cuando el zoom lo permite.
+ function niceStep(span,target){let raw=span/target,pow=Math.pow(10,Math.floor(Math.log10(raw))),n=raw/pow;return (n<=1?1:n<=2?2:n<=5?5:10)*pow}
+ let sx=niceStep(v.xmax-v.xmin,Math.max(8,Math.floor((w-2*pad)/65))),sy=niceStep(v.ymax-v.ymin,Math.max(6,Math.floor((h-2*pad)/48)));
+ ctx.font='13px system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+ // Cuadrícula y etiquetas del eje X.
+ ctx.strokeStyle='#e6e8eb';ctx.lineWidth=1;
+ let x0=Math.ceil(v.xmin/sx)*sx;
+ for(let x=x0;x<=v.xmax+sx*.001;x+=sx){let px=X(x);ctx.beginPath();ctx.moveTo(px,pad);ctx.lineTo(px,h-pad);ctx.stroke();ctx.fillStyle='#343a40';ctx.fillText(fmt(Math.abs(x)<1e-10?0:x),px,h-pad+9)}
+ // Cuadrícula y etiquetas del eje Y.
+ ctx.textAlign='right';ctx.textBaseline='middle';
+ let y0=Math.ceil(v.ymin/sy)*sy;
+ for(let y=y0;y<=v.ymax+sy*.001;y+=sy){let py=Y(y);ctx.beginPath();ctx.moveTo(pad,py);ctx.lineTo(w-pad,py);ctx.stroke();if(Math.abs(y)>1e-10){ctx.fillStyle='#343a40';ctx.fillText(fmt(y),pad-9,py)}}
+ // Ejes coordenados más visibles.
+ ctx.strokeStyle='#20252b';ctx.lineWidth=2.2;
+ if(v.ymin<=0&&v.ymax>=0){ctx.beginPath();ctx.moveTo(pad,Y(0));ctx.lineTo(w-pad,Y(0));ctx.stroke()}
+ if(v.xmin<=0&&v.xmax>=0){ctx.beginPath();ctx.moveTo(X(0),pad);ctx.lineTo(X(0),h-pad);ctx.stroke()}
+ // Nombres de los ejes y extremos.
+ ctx.fillStyle='#111';ctx.font='bold 16px system-ui';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('Y',pad-28,pad-12);
+ ctx.textAlign='right';ctx.fillText('X',w-pad+20,(v.ymin<=0&&v.ymax>=0)?Y(0)-14:h-pad+22);
+ ctx.font='bold 15px system-ui';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='#9a7200';ctx.fillText('y = '+expr,pad+8,10);
+ // Trazo de la función: corta en discontinuidades y valores fuera de escala.
+ ctx.save();ctx.beginPath();ctx.rect(pad,pad,w-2*pad,h-2*pad);ctx.clip();
+ ctx.strokeStyle='#d09b00';ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();let started=false;
+ for(let i=0;i<=Math.max(1400,w*2);i++){let x=v.xmin+(v.xmax-v.xmin)*i/Math.max(1400,w*2),y;try{y=evaluate(expr,{x})}catch(e){y=NaN}
+ if(!Number.isFinite(y)||Math.abs(y)>1e9||y<v.ymin-(v.ymax-v.ymin)*2||y>v.ymax+(v.ymax-v.ymin)*2){started=false;continue}
+ let px=X(x),py=Y(y);if(!started){ctx.moveTo(px,py);started=true}else ctx.lineTo(px,py)}
+ ctx.stroke();ctx.restore();
+ // Borde del plano.
+ ctx.strokeStyle='#aeb4bb';ctx.lineWidth=1;ctx.strokeRect(pad,pad,w-2*pad,h-2*pad);
+}
+function drawInline(){let f=$('inlineFunc').value.trim()||$('expr').value.trim();if(!f){$('answer').textContent='Escribe una función para graficar.';return}graph2(f)}
+$('inlineDraw').onclick=drawInline;
+$('zoomIn').onclick=()=>{let cx=(view2.xmin+view2.xmax)/2,cy=(view2.ymin+view2.ymax)/2,dx=(view2.xmax-view2.xmin)*.35,dy=(view2.ymax-view2.ymin)*.35;view2.xmin=cx-dx;view2.xmax=cx+dx;view2.ymin=cy-dy;view2.ymax=cy+dy;drawInline()};
+$('zoomOut').onclick=()=>{let cx=(view2.xmin+view2.xmax)/2,cy=(view2.ymin+view2.ymax)/2,dx=(view2.xmax-view2.xmin)*.72,dy=(view2.ymax-view2.ymin)*.72;view2.xmin=cx-dx;view2.xmax=cx+dx;view2.ymin=cy-dy;view2.ymax=cy+dy;drawInline()};
+$('zoomReset').onclick=()=>{view2={...view2,xmin:-10,xmax:10,ymin:-10,ymax:10};drawInline()};
+const plotCanvas=$('inlinePlot');
+plotCanvas.addEventListener('wheel',e=>{e.preventDefault();let factor=e.deltaY<0?.82:1.22,cx=(view2.xmin+view2.xmax)/2,cy=(view2.ymin+view2.ymax)/2,dx=(view2.xmax-view2.xmin)*factor/2,dy=(view2.ymax-view2.ymin)*factor/2;view2.xmin=cx-dx;view2.xmax=cx+dx;view2.ymin=cy-dy;view2.ymax=cy+dy;drawInline()},{passive:false});
+plotCanvas.addEventListener('pointerdown',e=>{plotCanvas.setPointerCapture(e.pointerId);view2.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(view2.pointers.size===1){view2.drag=true;view2.lastX=e.clientX;view2.lastY=e.clientY}else if(view2.pointers.size===2){let a=[...view2.pointers.values()];view2.pinch=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}});
+plotCanvas.addEventListener('pointermove',e=>{if(!view2.pointers.has(e.pointerId))return;let old=view2.pointers.get(e.pointerId);view2.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(view2.pointers.size===1&&view2.drag){let dx=e.clientX-old.x,dy=e.clientY-old.y,rect=plotCanvas.getBoundingClientRect();let sx=(view2.xmax-view2.xmin)*dx/rect.width,sy=(view2.ymax-view2.ymin)*dy/rect.height;view2.xmin-=sx;view2.xmax-=sx;view2.ymin+=sy;view2.ymax+=sy;drawInline()}else if(view2.pointers.size===2){let a=[...view2.pointers.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(view2.pinch>0){let factor=view2.pinch/dist,cx=(view2.xmin+view2.xmax)/2,cy=(view2.ymin+view2.ymax)/2,dx=(view2.xmax-view2.xmin)*factor/2,dy=(view2.ymax-view2.ymin)*factor/2;view2.xmin=cx-dx;view2.xmax=cx+dx;view2.ymin=cy-dy;view2.ymax=cy+dy;drawInline()}view2.pinch=dist}});
+function endPointer(e){view2.pointers.delete(e.pointerId);if(view2.pointers.size===0)view2.drag=false;view2.pinch=0}
+plotCanvas.addEventListener('pointerup',endPointer);plotCanvas.addEventListener('pointercancel',endPointer);
+function drawInline3(){let f=$('inlineZfunc').value.trim(),c=$('inlinePlot3'),ctx=c.getContext('2d'),w=c.width,h=c.height,R=5,N=28;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);let pts=[],mn=Infinity,mx=-Infinity;for(let j=0;j<N;j++)for(let i=0;i<N;i++){let x=-R+2*R*i/(N-1),y=-R+2*R*j/(N-1),z;try{z=evaluate(f,{x,y})}catch(e){z=NaN}if(Number.isFinite(z)&&Math.abs(z)<1e5){mn=Math.min(mn,z);mx=Math.max(mx,z)}pts.push({x,y,z})}if(!Number.isFinite(mn)){ctx.fillStyle='#222';ctx.fillText('No se pudo graficar la expresión.',25,40);return}let span=Math.max(1,mx-mn),pr=(x,y,z)=>({x:w/2+(x-y)*w/(4*R),y:h*.55+(x+y)*h/(8*R)-(z-(mn+mx)/2)*h/(3*span)});ctx.strokeStyle='#b58a00';ctx.lineWidth=1.5;for(let j=0;j<N;j++){ctx.beginPath();let ok=false;for(let i=0;i<N;i++){let p=pts[j*N+i];if(!Number.isFinite(p.z)){ok=false;continue}let q=pr(p.x,p.y,p.z);if(!ok){ctx.moveTo(q.x,q.y);ok=true}else ctx.lineTo(q.x,q.y)}ctx.stroke()}for(let i=0;i<N;i++){ctx.beginPath();let ok=false;for(let j=0;j<N;j++){let p=pts[j*N+i];if(!Number.isFinite(p.z)){ok=false;continue}let q=pr(p.x,p.y,p.z);if(!ok){ctx.moveTo(q.x,q.y);ok=true}else ctx.lineTo(q.x,q.y)}ctx.stroke()}ctx.fillStyle='#222';ctx.font='bold 15px sans-serif';ctx.fillText('z = '+f,18,24);ctx.fillText('x, y ∈ [-'+R+', '+R+'] · z ≈ ['+fmt(mn)+', '+fmt(mx)+']',18,h-15)}
+$('inlineDraw3').onclick=drawInline3;
+$('expr').addEventListener('input',()=>{let s=$('expr').value;if(/[xy]/i.test(s)&&s.trim()){$('inlineFunc').value=s;drawInline()}});
+drawInline();drawInline3();
+</script>
+</body></html>
